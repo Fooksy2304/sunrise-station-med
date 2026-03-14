@@ -71,6 +71,12 @@
   id: CarpRiftHealTarget
 
 - type: Tag
+  id: PirateBoss
+
+- type: Tag
+  id: PirateVeteranLeader
+
+- type: Tag
   id: Felinid
 
 - type: Tag
@@ -637,3 +643,8 @@
 # Закрыто только сверху (шлюяпы, кепки)
 - type: Tag
   id: TopCovered
+
+# head
+# обозначает вещь, как твёрдый шлем
+- type: Tag
+  id: Helmet

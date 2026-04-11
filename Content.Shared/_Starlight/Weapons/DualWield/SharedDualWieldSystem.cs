@@ -32,10 +32,9 @@ public sealed class SharedDualWieldSystem : EntitySystem
             return;
 
         var holder = Transform(gun).ParentUid;
-        if (!TryComp<DualWieldComponent>(holder, out var dualWield) || !dualWield.Active)
-            return;
-
-        if (dualWield.LeftGun != gun.Owner && dualWield.RightGun != gun.Owner)
+        if (!TryComp<DualWieldComponent>(holder, out var dualWield) ||
+            !dualWield.Active ||
+            dualWield.LeftGun != gun.Owner && dualWield.RightGun != gun.Owner)
             return;
 
         if (gun.Comp.DualWieldInaccuracyPenalty > 0f)

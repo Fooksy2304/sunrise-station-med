@@ -39,9 +39,9 @@ public abstract partial class SharedGunSystem
             && (uid == firstGun || uid == secondGun))
         {
             var isActive = TryComp<DualWieldComponent>(args.User, out var dualWieldState) && dualWieldState.Active;
-            var canDualWield =
-                TryComp<CanDualWieldComponent>(firstGun, out var firstDualWield) && firstDualWield.Enabled &&
-                TryComp<CanDualWieldComponent>(secondGun, out var secondDualWield) && secondDualWield.Enabled;
+            var firstCanDualWield = TryComp<CanDualWieldComponent>(firstGun, out var firstDualWield) && firstDualWield.Enabled;
+            var secondCanDualWield = TryComp<CanDualWieldComponent>(secondGun, out var secondDualWield) && secondDualWield.Enabled;
+            var canDualWield = firstCanDualWield && secondCanDualWield;
 
             args.Verbs.Add(new AlternativeVerb
             {

@@ -181,6 +181,14 @@ public abstract partial class SharedGunSystem : EntitySystem
             return;
 
         var isDualWield = TryComp<DualWieldComponent>(user.Value, out var dualWield) && dualWield.Active;
+        if (isDualWield && ent != dualWield!.LeftGun && ent != dualWield.RightGun)
+        {
+            dualWield.Active = false;
+            Dirty(user.Value, dualWield);
+            PopupSystem.PopupClient(Loc.GetString("dual-wield-interrupted"), user.Value, user.Value);
+            return;
+        }
+
         if (!isDualWield && ent != GetEntity(msg.Gun))
             return;
 
@@ -196,9 +204,9 @@ public abstract partial class SharedGunSystem : EntitySystem
             }
         }
         // Sunrise-End
-        var fired = AttemptShoot(user.Value, ent, gun);
+        var shotFired = AttemptShoot(user.Value, ent, gun);
 
-        if (isDualWield && fired)
+        if (isDualWield && shotFired)
         {
             ApplyDualWieldShotDelay(ent, dualWield!);
             dualWield!.NextIsLeft = !dualWield.NextIsLeft;
@@ -271,6 +279,7 @@ public abstract partial class SharedGunSystem : EntitySystem
 
             dualWield.Active = false;
             Dirty(entity, dualWield);
+            PopupSystem.PopupClient(Loc.GetString("dual-wield-interrupted"), entity, entity);
         }
 
         if (TryComp<MechComponent>(entity, out var mech)

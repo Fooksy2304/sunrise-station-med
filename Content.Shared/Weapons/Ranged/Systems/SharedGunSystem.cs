@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Content.Shared._Starlight.Weapons.DualWield;
 using Content.Shared._Starlight.Weapon.Components;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Actions;
@@ -179,7 +180,16 @@ public abstract partial class SharedGunSystem : EntitySystem
         if (!TryGetGun(user.Value, out var ent, out var gun))
             return;
 
-        if (ent != GetEntity(msg.Gun))
+        var isDualWield = TryComp<DualWieldComponent>(user.Value, out var dualWield) && dualWield.Active;
+        if (isDualWield && ent != dualWield!.LeftGun && ent != dualWield.RightGun)
+        {
+            dualWield.Active = false;
+            Dirty(user.Value, dualWield);
+            PopupSystem.PopupClient(Loc.GetString("dual-wield-interrupted"), user.Value, user.Value);
+            return;
+        }
+
+        if (!isDualWield && ent != GetEntity(msg.Gun))
             return;
 
         gun.ShootCoordinates = GetCoordinates(msg.Coordinates);
@@ -194,7 +204,14 @@ public abstract partial class SharedGunSystem : EntitySystem
             }
         }
         // Sunrise-End
-        AttemptShoot(user.Value, ent, gun);
+        var shotFired = AttemptShoot(user.Value, ent, gun);
+
+        if (isDualWield && shotFired)
+        {
+            ApplyDualWieldShotDelay(ent, dualWield!);
+            dualWield!.NextIsLeft = !dualWield.NextIsLeft;
+            Dirty(user.Value, dualWield);
+        }
     }
 
     private void OnStopShootRequest(RequestStopShootEvent ev, EntitySessionEventArgs args)
@@ -208,6 +225,12 @@ public abstract partial class SharedGunSystem : EntitySystem
 
         if (TryComp<MechPilotComponent>(user.Value, out var mechPilot))
             user = mechPilot.Mech;
+
+        if (TryComp<DualWieldComponent>(user.Value, out var dualWield) && dualWield.Active)
+        {
+            StopDualWield(dualWield);
+            return;
+        }
 
         if (!TryGetGun(user.Value, out var ent, out var gun))
             return;
@@ -236,12 +259,28 @@ public abstract partial class SharedGunSystem : EntitySystem
             return;
 
         entity.Comp.NextFire = Timing.CurTime + delay;
+        DirtyField(entity, entity.Comp, nameof(GunComponent.NextFire));
     }
 
     public bool TryGetGun(EntityUid entity, out EntityUid gunEntity, [NotNullWhen(true)] out GunComponent? gunComp)
     {
         gunEntity = default;
         gunComp = null;
+
+        if (TryComp<DualWieldComponent>(entity, out var dualWield) && dualWield.Active)
+        {
+            var dualGunUid = dualWield.NextIsLeft ? dualWield.LeftGun : dualWield.RightGun;
+            if (TryComp<GunComponent>(dualGunUid, out var dualGunComp))
+            {
+                gunEntity = dualGunUid;
+                gunComp = dualGunComp;
+                return true;
+            }
+
+            dualWield.Active = false;
+            Dirty(entity, dualWield);
+            PopupSystem.PopupClient(Loc.GetString("dual-wield-interrupted"), entity, entity);
+        }
 
         if (TryComp<MechComponent>(entity, out var mech)
             && mech.CurrentSelectedEquipment.HasValue
@@ -269,6 +308,35 @@ public abstract partial class SharedGunSystem : EntitySystem
         }
 
         return false;
+    }
+
+    private void ApplyDualWieldShotDelay(EntityUid firedGun, DualWieldComponent dualWield)
+    {
+        var otherGun = dualWield.LeftGun == firedGun ? dualWield.RightGun : dualWield.LeftGun;
+        if (!TryComp<GunComponent>(otherGun, out var otherGunComp))
+            return;
+
+        if (!TryComp<CanDualWieldComponent>(firedGun, out var currentDualWield) || !currentDualWield.Enabled)
+            return;
+
+        if (currentDualWield.DualWieldShotDelay <= 0f)
+            return;
+
+        var delayedUntil = Timing.CurTime + TimeSpan.FromSeconds(currentDualWield.DualWieldShotDelay);
+        if (otherGunComp.NextFire >= delayedUntil)
+            return;
+
+        otherGunComp.NextFire = delayedUntil;
+        DirtyField(otherGun, otherGunComp, nameof(GunComponent.NextFire));
+    }
+
+    private void StopDualWield(DualWieldComponent dualWield)
+    {
+        if (TryComp<GunComponent>(dualWield.LeftGun, out var leftGun))
+            StopShooting(dualWield.LeftGun, leftGun);
+
+        if (TryComp<GunComponent>(dualWield.RightGun, out var rightGun))
+            StopShooting(dualWield.RightGun, rightGun);
     }
 
     private void StopShooting(EntityUid uid, GunComponent gun)

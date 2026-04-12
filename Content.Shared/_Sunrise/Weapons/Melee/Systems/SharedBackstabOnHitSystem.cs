@@ -22,35 +22,27 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
 
     private void OnMeleeHit(Entity<BackstabOnHitComponent> ent, ref MeleeHitEvent args)
     {
-        if (!args.IsHit || args.HitEntities.Count == 0)
+        // Direction is only set for wide/heavy swings.
+        // Backstab bonus should only be calculated for direct single-target melee hits.
+        if (!args.IsHit || args.Direction != null || args.HitEntities.Count != 1)
             return;
 
         if (!TryComp<TransformComponent>(args.User, out var attackerTransform))
             return;
 
         var attackerPosition = _transformSystem.GetWorldPosition(attackerTransform);
-        var hasBackstabTarget = false;
+        var target = args.HitEntities[0];
+        if (!TryComp<TransformComponent>(target, out var targetTransform))
+            return;
 
-        foreach (var target in args.HitEntities)
-        {
-            if (!TryComp<TransformComponent>(target, out var targetTransform))
-                continue;
+        var targetToAttacker = attackerPosition - _transformSystem.GetWorldPosition(targetTransform);
+        if (targetToAttacker.LengthSquared() <= MinimumBackstabDistanceSquared)
+            return;
 
-            var targetToAttacker = attackerPosition - _transformSystem.GetWorldPosition(targetTransform);
-            if (targetToAttacker.LengthSquared() <= MinimumBackstabDistanceSquared)
-                continue;
+        var targetForward = _transformSystem.GetWorldRotation(targetTransform).ToWorldVec();
+        var targetForwardDot = Vector2.Dot(targetForward, Vector2.Normalize(targetToAttacker));
 
-            var targetForward = _transformSystem.GetWorldRotation(targetTransform).ToWorldVec();
-            var targetForwardDot = Vector2.Dot(targetForward, Vector2.Normalize(targetToAttacker));
-
-            if (targetForwardDot > BackstabRearHemisphereDotThreshold)
-                continue;
-
-            hasBackstabTarget = true;
-            break;
-        }
-
-        if (!hasBackstabTarget)
+        if (targetForwardDot > BackstabRearHemisphereDotThreshold)
             return;
 
         if (ent.Comp.BonusDamage != null)

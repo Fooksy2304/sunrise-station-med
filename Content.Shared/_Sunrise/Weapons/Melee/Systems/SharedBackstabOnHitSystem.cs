@@ -28,6 +28,7 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
             return;
 
         var attackerPosition = _transform.GetWorldPosition(attackerTransform);
+        var hasBackstabTarget = false;
 
         foreach (var target in args.HitEntities)
         {
@@ -44,13 +45,17 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
             if (targetForwardDot > BackstabRearHemisphereDotThreshold)
                 continue;
 
-            if (ent.Comp.BonusDamage != null)
-                args.BonusDamage += ent.Comp.BonusDamage;
-
-            if (ent.Comp.DamageModifierSet != null)
-                args.ModifiersList.Add(ent.Comp.DamageModifierSet);
-
+            hasBackstabTarget = true;
             break;
         }
+
+        if (!hasBackstabTarget)
+            return;
+
+        if (ent.Comp.BonusDamage != null)
+            args.BonusDamage += ent.Comp.BonusDamage;
+
+        if (ent.Comp.DamageModifierSet != null)
+            args.ModifiersList.Add(ent.Comp.DamageModifierSet);
     }
 }

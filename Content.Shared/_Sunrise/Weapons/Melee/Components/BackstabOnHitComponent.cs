@@ -4,7 +4,7 @@ using Robust.Shared.GameStates;
 namespace Content.Shared._Sunrise.Weapons.Melee.Components;
 
 /// <summary>
-/// Adds bonus melee damage when the attacker is behind at least one hit target.
+/// Adds bonus melee damage when a direct single-target melee hit lands from behind the target.
 /// </summary>
 [RegisterComponent, NetworkedComponent]
 public sealed partial class BackstabOnHitComponent : Component

@@ -7,8 +7,9 @@ namespace Content.Shared._Sunrise.Weapons.Melee.Systems;
 
 public abstract class SharedBackstabOnHitSystem : EntitySystem
 {
-    // Targets count as backstabbed when the attacker is anywhere in the rear hemisphere.
+    // Targets count as backstabbed when attacker is in the rear hemisphere (dot product <= 0).
     private const float BackstabRearHemisphereDotThreshold = 0f;
+    // Prevents unstable direction checks when attacker and target are effectively at the same position.
     private const float MinimumBackstabDistanceSquared = 0.0001f;
 
     [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
@@ -25,7 +26,7 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
         if (!args.IsHit)
             return;
 
-        // Direction is only set for wide/heavy swings.
+        // Wide/heavy swings do not receive backstab bonuses.
         if (args.Direction != null)
             return;
 

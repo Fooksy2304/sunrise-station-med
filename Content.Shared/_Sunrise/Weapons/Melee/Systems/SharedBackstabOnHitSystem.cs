@@ -9,8 +9,9 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
 {
     // Targets count as backstabbed when the attacker is anywhere in the rear hemisphere.
     private const float BackstabRearHemisphereDotThreshold = 0f;
+    private const float MinimumBackstabDistanceSquared = 0.0001f;
 
-    [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
 
     public override void Initialize()
     {
@@ -27,7 +28,7 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
         if (!TryComp<TransformComponent>(args.User, out var attackerTransform))
             return;
 
-        var attackerPosition = _transform.GetWorldPosition(attackerTransform);
+        var attackerPosition = _transformSystem.GetWorldPosition(attackerTransform);
         var hasBackstabTarget = false;
 
         foreach (var target in args.HitEntities)
@@ -35,11 +36,11 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
             if (!TryComp<TransformComponent>(target, out var targetTransform))
                 continue;
 
-            var targetToAttacker = attackerPosition - _transform.GetWorldPosition(targetTransform);
-            if (targetToAttacker.LengthSquared() <= float.Epsilon)
+            var targetToAttacker = attackerPosition - _transformSystem.GetWorldPosition(targetTransform);
+            if (targetToAttacker.LengthSquared() <= MinimumBackstabDistanceSquared)
                 continue;
 
-            var targetForward = _transform.GetWorldRotation(targetTransform).ToWorldVec();
+            var targetForward = _transformSystem.GetWorldRotation(targetTransform).ToWorldVec();
             var targetForwardDot = Vector2.Dot(targetForward, Vector2.Normalize(targetToAttacker));
 
             if (targetForwardDot > BackstabRearHemisphereDotThreshold)

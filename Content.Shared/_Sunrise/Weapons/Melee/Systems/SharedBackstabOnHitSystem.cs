@@ -22,9 +22,15 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
 
     private void OnMeleeHit(Entity<BackstabOnHitComponent> ent, ref MeleeHitEvent args)
     {
+        if (!args.IsHit)
+            return;
+
         // Direction is only set for wide/heavy swings.
-        // Backstab bonus should only be calculated for direct single-target melee hits.
-        if (!args.IsHit || args.Direction != null || args.HitEntities.Count != 1)
+        if (args.Direction != null)
+            return;
+
+        // Bonus is only supported for direct single-target hits.
+        if (args.HitEntities.Count != 1)
             return;
 
         if (!TryComp<TransformComponent>(args.User, out var attackerTransform))
@@ -35,12 +41,12 @@ public abstract class SharedBackstabOnHitSystem : EntitySystem
         if (!TryComp<TransformComponent>(target, out var targetTransform))
             return;
 
-        var targetToAttacker = attackerPosition - _transformSystem.GetWorldPosition(targetTransform);
-        if (targetToAttacker.LengthSquared() <= MinimumBackstabDistanceSquared)
+        var targetToAttackerVector = attackerPosition - _transformSystem.GetWorldPosition(targetTransform);
+        if (targetToAttackerVector.LengthSquared() <= MinimumBackstabDistanceSquared)
             return;
 
         var targetForward = _transformSystem.GetWorldRotation(targetTransform).ToWorldVec();
-        var targetForwardDot = Vector2.Dot(targetForward, Vector2.Normalize(targetToAttacker));
+        var targetForwardDot = Vector2.Dot(targetForward, Vector2.Normalize(targetToAttackerVector));
 
         if (targetForwardDot > BackstabRearHemisphereDotThreshold)
             return;

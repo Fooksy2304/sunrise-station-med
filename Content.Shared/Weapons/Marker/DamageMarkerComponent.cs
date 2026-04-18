@@ -14,10 +14,10 @@ namespace Content.Shared.Weapons.Marker;
 public sealed partial class DamageMarkerComponent : Component
 {
     // Sunrise-Edit
-    public static readonly ResPath DefaultEffectsPath = new("/Textures/Objects/Weapons/Effects");
+    public static readonly ResPath DefaultEffectPath = new("/Textures/Objects/Weapons/Effects");
 
     // Sunrise-Edit
-    public static readonly SpriteSpecifier.Rsi DefaultEffect = new(DefaultEffectsPath, "shield2");
+    public static readonly SpriteSpecifier.Rsi DefaultEffect = new(DefaultEffectPath, "shield2");
 
     /// <summary>
     /// Sprite to apply to the entity while damagemarker is applied.

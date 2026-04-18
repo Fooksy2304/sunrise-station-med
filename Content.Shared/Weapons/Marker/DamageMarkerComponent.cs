@@ -13,11 +13,18 @@ namespace Content.Shared.Weapons.Marker;
 [AutoGenerateComponentPause]
 public sealed partial class DamageMarkerComponent : Component
 {
+    // Sunrise-Edit
+    public static readonly SpriteSpecifier.Rsi DefaultEffect = new(new ResPath("/Textures/Objects/Weapons/Effects"), "shield2");
+
     /// <summary>
     /// Sprite to apply to the entity while damagemarker is applied.
     /// </summary>
-    [ViewVariables(VVAccess.ReadWrite), DataField("effect")]
-    public SpriteSpecifier.Rsi? Effect = new(new ResPath("/Textures/Objects/Weapons/Effects"), "shield2");
+    [ViewVariables(VVAccess.ReadWrite), DataField("effect"), AutoNetworkedField]
+    public SpriteSpecifier.Rsi? Effect = DefaultEffect;
+
+    // Sunrise-Edit
+    [ViewVariables(VVAccess.ReadWrite), DataField("effectLight"), AutoNetworkedField]
+    public SpriteSpecifier.Rsi? EffectLight;
 
     /// <summary>
     /// Sound to play when the damage marker is procced.

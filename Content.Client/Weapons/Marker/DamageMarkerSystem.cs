@@ -18,23 +18,41 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
 
     private void OnMarkerStartup(EntityUid uid, DamageMarkerComponent component, ComponentStartup args)
     {
-        if (!_timing.ApplyingState || component.Effect == null || !TryComp<SpriteComponent>(uid, out var sprite))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Key);
-        _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
+        if (component.Effect != null)
+        {
+            var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Base);
+            _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
+        }
+
+        // Sunrise-Edit
+        if (component.EffectLight != null)
+        {
+            var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Light);
+            _sprite.LayerSetRsi((uid, sprite), layer, component.EffectLight.RsiPath, component.EffectLight.RsiState);
+            _sprite.LayerSetShader((uid, sprite), layer, "unshaded");
+        }
     }
 
     private void OnMarkerShutdown(EntityUid uid, DamageMarkerComponent component, ComponentShutdown args)
     {
-        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite) || !_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Key, out var weh, false))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        _sprite.RemoveLayer((uid, sprite), weh);
+        if (_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Base, out var baseLayer, false))
+            _sprite.RemoveLayer((uid, sprite), baseLayer);
+
+        // Sunrise-Edit
+        if (_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Light, out var lightLayer, false))
+            _sprite.RemoveLayer((uid, sprite), lightLayer);
     }
 
     private enum DamageMarkerKey : byte
     {
-        Key
+        Base,
+        // Sunrise-Edit
+        Light
     }
 }

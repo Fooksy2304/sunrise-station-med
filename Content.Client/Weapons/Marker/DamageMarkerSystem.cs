@@ -18,23 +18,42 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
 
     private void OnMarkerStartup(EntityUid uid, DamageMarkerComponent component, ComponentStartup args)
     {
-        if (!_timing.ApplyingState || component.Effect == null || !TryComp<SpriteComponent>(uid, out var sprite))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Key);
+        var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Base);
         _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
+
+        // Sunrise-Edit
+        if (component.EffectLight != null)
+        {
+            var lightLayer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Light);
+            _sprite.LayerSetRsi((uid, sprite), lightLayer, component.EffectLight.RsiPath, component.EffectLight.RsiState);
+            _sprite.LayerSetShader((uid, sprite), lightLayer, "unshaded");
+        }
     }
 
     private void OnMarkerShutdown(EntityUid uid, DamageMarkerComponent component, ComponentShutdown args)
     {
-        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite) || !_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Key, out var weh, false))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        _sprite.RemoveLayer((uid, sprite), weh);
+        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Base);
+        // Sunrise-Edit
+        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Light);
+    }
+
+    // Sunrise-Edit
+    private void RemoveMarkerLayer(Entity<SpriteComponent> ent, DamageMarkerKey key)
+    {
+        if (_sprite.LayerMapTryGet(ent, key, out var layer, false))
+            _sprite.RemoveLayer(ent, layer);
     }
 
     private enum DamageMarkerKey : byte
     {
-        Key
+        Base,
+        // Sunrise-Edit
+        Light
     }
 }

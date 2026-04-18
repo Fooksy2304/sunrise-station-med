@@ -197,6 +197,22 @@
     requireInSpace: true
 
 - type: entity
+  id: BulletChargeGutsSword
+  name: leech bolt
+  parent: BulletChargeGlaive
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: DamageMarkerOnCollide
+    # Sunrise-Edit
+    effect:
+      sprite: /Textures/_Sunrise/Objects/Weapons/Effects/gutsword_vampirism.rsi
+      state: icon
+    # Sunrise-Edit
+    effectLight:
+      sprite: /Textures/_Sunrise/Objects/Weapons/Effects/gutsword_vampirism.rsi
+      state: icon-light
+
+- type: entity
   id: TeslaGunBulletOrion # Sunrise-Add
   parent: TeslaGunBullet
   categories: [ HideSpawnMenu ]

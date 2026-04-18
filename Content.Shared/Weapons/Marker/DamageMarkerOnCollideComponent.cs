@@ -1,6 +1,7 @@
 using Content.Shared.Damage;
 using Content.Shared.Whitelist;
 using Robust.Shared.GameStates;
+using Robust.Shared.Utility;
 
 namespace Content.Shared.Weapons.Marker;
 
@@ -21,6 +22,14 @@ public sealed partial class DamageMarkerOnCollideComponent : Component
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite), DataField("damage")]
     public DamageSpecifier Damage = new();
+
+    // Sunrise-Edit
+    [DataField("effect")]
+    public SpriteSpecifier.Rsi? Effect;
+
+    // Sunrise-Edit
+    [DataField("effectLight")]
+    public SpriteSpecifier.Rsi? EffectLight;
 
     /// <summary>
     /// How many more times we can apply it.

@@ -41,12 +41,16 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
         if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        if (_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Base, out var baseLayer, false))
-            _sprite.RemoveLayer((uid, sprite), baseLayer);
-
+        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Base);
         // Sunrise-Edit
-        if (_sprite.LayerMapTryGet((uid, sprite), DamageMarkerKey.Light, out var lightLayer, false))
-            _sprite.RemoveLayer((uid, sprite), lightLayer);
+        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Light);
+    }
+
+    // Sunrise-Edit
+    private void RemoveMarkerLayer(Entity<SpriteComponent> ent, DamageMarkerKey key)
+    {
+        if (_sprite.LayerMapTryGet(ent, key, out var layer, false))
+            _sprite.RemoveLayer(ent, layer);
     }
 
     private enum DamageMarkerKey : byte

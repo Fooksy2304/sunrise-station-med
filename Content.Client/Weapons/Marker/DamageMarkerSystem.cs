@@ -27,9 +27,9 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
         // Sunrise-Edit
         if (component.EffectLight != null)
         {
-            var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Light);
-            _sprite.LayerSetRsi((uid, sprite), layer, component.EffectLight.RsiPath, component.EffectLight.RsiState);
-            _sprite.LayerSetShader((uid, sprite), layer, "unshaded");
+            var lightLayer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Light);
+            _sprite.LayerSetRsi((uid, sprite), lightLayer, component.EffectLight.RsiPath, component.EffectLight.RsiState);
+            _sprite.LayerSetShader((uid, sprite), lightLayer, "unshaded");
         }
     }
 

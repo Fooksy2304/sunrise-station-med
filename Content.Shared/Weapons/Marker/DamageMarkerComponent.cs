@@ -23,7 +23,7 @@ public sealed partial class DamageMarkerComponent : Component
     /// Sprite to apply to the entity while damagemarker is applied.
     /// </summary>
     [ViewVariables(VVAccess.ReadWrite), DataField("effect"), AutoNetworkedField]
-    public SpriteSpecifier.Rsi? Effect;
+    public SpriteSpecifier.Rsi Effect = DefaultEffect;
 
     // Sunrise-Edit
     [ViewVariables(VVAccess.ReadWrite), DataField("effectLight"), AutoNetworkedField]

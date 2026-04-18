@@ -21,11 +21,8 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
         if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
             return;
 
-        if (component.Effect != null)
-        {
-            var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Base);
-            _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
-        }
+        var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Base);
+        _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
 
         // Sunrise-Edit
         if (component.EffectLight != null)

@@ -16,31 +16,31 @@ public sealed class DamageMarkerSystem : SharedDamageMarkerSystem
         SubscribeLocalEvent<DamageMarkerComponent, ComponentShutdown>(OnMarkerShutdown);
     }
 
-    private void OnMarkerStartup(EntityUid uid, DamageMarkerComponent component, ComponentStartup args)
+    private void OnMarkerStartup(Entity<DamageMarkerComponent> ent, ref ComponentStartup args)
     {
-        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(ent, out var sprite))
             return;
 
-        var layer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Base);
-        _sprite.LayerSetRsi((uid, sprite), layer, component.Effect.RsiPath, component.Effect.RsiState);
+        var layer = _sprite.LayerMapReserve((ent.Owner, sprite), DamageMarkerKey.Base);
+        _sprite.LayerSetRsi((ent.Owner, sprite), layer, ent.Comp.Effect.RsiPath, ent.Comp.Effect.RsiState);
 
         // Sunrise-Edit
-        if (component.EffectLight != null)
+        if (ent.Comp.EffectLight != null)
         {
-            var lightLayer = _sprite.LayerMapReserve((uid, sprite), DamageMarkerKey.Light);
-            _sprite.LayerSetRsi((uid, sprite), lightLayer, component.EffectLight.RsiPath, component.EffectLight.RsiState);
-            _sprite.LayerSetShader((uid, sprite), lightLayer, "unshaded");
+            var lightLayer = _sprite.LayerMapReserve((ent.Owner, sprite), DamageMarkerKey.Light);
+            _sprite.LayerSetRsi((ent.Owner, sprite), lightLayer, ent.Comp.EffectLight.RsiPath, ent.Comp.EffectLight.RsiState);
+            sprite.LayerSetShader(lightLayer, "unshaded");
         }
     }
 
-    private void OnMarkerShutdown(EntityUid uid, DamageMarkerComponent component, ComponentShutdown args)
+    private void OnMarkerShutdown(Entity<DamageMarkerComponent> ent, ref ComponentShutdown args)
     {
-        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(uid, out var sprite))
+        if (!_timing.ApplyingState || !TryComp<SpriteComponent>(ent, out var sprite))
             return;
 
-        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Base);
+        RemoveMarkerLayer((ent.Owner, sprite), DamageMarkerKey.Base);
         // Sunrise-Edit
-        RemoveMarkerLayer((uid, sprite), DamageMarkerKey.Light);
+        RemoveMarkerLayer((ent.Owner, sprite), DamageMarkerKey.Light);
     }
 
     // Sunrise-Edit

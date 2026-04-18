@@ -138,7 +138,7 @@ public sealed class SwitchbladeTeleporterSystem : EntitySystem
     {
         var current = teleporter;
 
-        while (_container.TryGetContainingContainer((current, null, null), out var container))
+        while (_container.TryGetContainingContainer(current, out var container))
         {
             if (container.Owner == user)
                 return true;

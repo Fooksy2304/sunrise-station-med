@@ -191,7 +191,7 @@ public sealed class SunriseArrivalsSystem : EntitySystem
             // Put shuttle in infinite FTL so it appears to be in hyperspace
             var shuttleComp = Comp<ShuttleComponent>(shuttleUid.Value);
             _shuttle.FTLToCoordinates(shuttleUid.Value, shuttleComp,
-                Transform(shuttleUid.Value).Coordinates, Angle.Zero, hyperspaceTime: 3600f);
+                new EntityCoordinates(shuttleUid.Value, Vector2.Zero), Angle.Zero, hyperspaceTime: 3600f);
 
             Log.Info($"Arrivals shuttle {ToPrettyString(shuttleUid.Value)} spawned for player " +
                      $"'{arrivals.PlayerName}' heading to {ToPrettyString(station)}");
@@ -235,7 +235,7 @@ public sealed class SunriseArrivalsSystem : EntitySystem
             // Put back into infinite FTL
             var shuttleComp = Comp<ShuttleComponent>(uid);
             _shuttle.FTLToCoordinates(uid, shuttleComp,
-                Transform(uid).Coordinates, Angle.Zero, hyperspaceTime: 3600f);
+                new EntityCoordinates(uid, Vector2.Zero), Angle.Zero, hyperspaceTime: 3600f);
         }
     }
 

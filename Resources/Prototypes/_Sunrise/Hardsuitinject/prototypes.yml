@@ -28,7 +28,6 @@
 
 - type: entity
   parent: Ampula
-  name: Ampula
   id: AmpulaMini
   components:
   - type: SolutionContainerManager
@@ -48,7 +47,6 @@
 
 - type: entity
   parent: Ampula
-  name: Ampula
   id: AmpulaMedium
   components:
   - type: SolutionContainerManager
@@ -68,7 +66,6 @@
 
 - type: entity
   parent: Ampula
-  name: Ampula
   id: AmpulaBig
   components:
   - type: SolutionContainerManager

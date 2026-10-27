@@ -106,7 +106,7 @@
   components:
   # Sunrise edit start - добавление спрайтов и эффекта искр
   - type: Sprite
-    sprite: _Sunrise/Structures/Wallmounts/lighting/light_tube.rsi
+    sprite: Structures/Wallmounts/Lighting/light_tube.rsi
     layers:
     - map: ["enum.PoweredLightLayers.Base"]
       state: empty
@@ -117,15 +117,17 @@
       state: glow
       shader: unshaded
     - map: ["sunrisePoweredLightFlicker"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/light_tube_sparks.rsi
       state: spark-light1
       shader: unshaded
       visible: false
     - map: ["sunrisePoweredLightSparks"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/light_tube_sparks.rsi
       state: spark-sparks1
       shader: unshaded
       visible: false
   - type: SunrisePoweredLightSparks
-    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/light_tube.rsi
+    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/light_tube_sparks.rsi
     flickerSound:
       collection: SunriseFluorescentFlicker
       params:
@@ -363,7 +365,7 @@
   components:
   # Sunrise edit start - добавление спрайтов и эффекта искр
   - type: Sprite
-    sprite: _Sunrise/Structures/Wallmounts/lighting/light_small.rsi
+    sprite: Structures/Wallmounts/Lighting/light_small.rsi
     layers:
     - map: ["enum.PoweredLightLayers.Base"]
       state: empty
@@ -374,15 +376,17 @@
       state: glow
       shader: unshaded
     - map: ["sunrisePoweredLightFlicker"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/light_small_sparks.rsi
       state: spark-light1
       shader: unshaded
       visible: false
     - map: ["sunrisePoweredLightSparks"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/light_small_sparks.rsi
       state: spark-sparks1
       shader: unshaded
       visible: false
   - type: SunrisePoweredLightSparks
-    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/light_small.rsi
+    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/light_small_sparks.rsi
     flickerSound:
       collection: SunriseFluorescentFlicker
       params:

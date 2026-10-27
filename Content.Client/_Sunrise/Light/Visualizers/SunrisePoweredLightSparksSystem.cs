@@ -1,9 +1,13 @@
 using Content.Shared._Sunrise.Light.Visualizers;
 using Content.Shared.Light;
 using Robust.Client.Animations;
+using Robust.Client.Audio;
 using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Animations;
+using Robust.Shared.Player;
+using Robust.Shared.Random;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using System.Diagnostics.CodeAnalysis;
 using static Robust.Client.GameObjects.SpriteComponent;
@@ -13,7 +17,11 @@ namespace Content.Client._Sunrise.Light.Visualizers;
 public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<SunrisePoweredLightSparksComponent>
 {
     [Dependency] private AnimationPlayerSystem _animation = default!;
+    [Dependency] private AudioSystem _audio = default!;
     [Dependency] private SharedPointLightSystem _pointLight = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private EntityQuery<MetaDataComponent> _metaQuery = default!;
 
     private const string FlickerAnimationKey = "sunrise-powered-light-flicker";
     private const string OnLayer = "sunrisePoweredLightOn";
@@ -22,7 +30,11 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
     public override void Initialize()
     {
         base.Initialize();
+        // Сначала применяем новое состояние лампы, затем запускаем и проигрываем локальные вспышки.
+        UpdatesAfter.Add(typeof(AppearanceSystem));
+        UpdatesBefore.Add(typeof(AnimationPlayerSystem));
         SubscribeLocalEvent<SunrisePoweredLightSparksComponent, AnimationCompletedEvent>(OnAnimationCompleted);
+        SubscribeLocalEvent<SunrisePoweredLightSparksComponent, ComponentShutdown>(OnShutdown);
     }
 
     protected override void OnAppearanceChange(EntityUid uid, SunrisePoweredLightSparksComponent component, ref AppearanceChangeEvent args)
@@ -38,11 +50,42 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
         if (args.Key != FlickerAnimationKey)
             return;
 
-        if (ent.Comp.OriginalLightEnergy is { } energy && TryComp<PointLightComponent>(ent, out var light))
-            _pointLight.SetEnergy(ent, energy, light);
-
-        ent.Comp.OriginalLightEnergy = null;
+        RestoreLight(ent);
         HideFlickerLayers(ent, ent.Comp);
+    }
+
+    private void OnShutdown(Entity<SunrisePoweredLightSparksComponent> ent, ref ComponentShutdown args)
+    {
+        StopFlicker(ent, ent.Comp);
+        RemComp<ActiveSunrisePoweredLightSparksComponent>(ent);
+        RemComp<SunrisePoweredLightSparksVisualsComponent>(ent);
+    }
+
+    public override void FrameUpdate(float frameTime)
+    {
+        base.FrameUpdate(frameTime);
+
+        var query = EntityQueryEnumerator<ActiveSunrisePoweredLightSparksComponent, SunrisePoweredLightSparksComponent, SpriteComponent, PointLightComponent>();
+        while (query.MoveNext(out var uid, out var active, out var sparks, out var sprite, out var light))
+        {
+            if (_timing.CurTime < active.NextFlickerTime)
+                continue;
+
+            if (sparks.States.Count == 0)
+                continue;
+
+            if ((_metaQuery.GetComponent(uid).Flags & MetaDataFlags.Detached) != 0)
+                continue;
+
+            // Stop вызывает AnimationCompletedEvent, поэтому старую анимацию завершаем до установки новых слоёв.
+            StopFlicker(uid, sparks);
+            UpdateLayer((uid, sprite), sparks.Layer, _random.Pick(sparks.States), sparks.SparkSprite);
+            if (sparks.SparkStates.Count > 0 && _random.Prob(sparks.SparksChance))
+                UpdateLayer((uid, sprite), sparks.SparksLayer, _random.Pick(sparks.SparkStates), sparks.SparkSprite);
+
+            PlayFlicker(uid, sparks, light);
+            active.NextFlickerTime = GetNextFlickerTime(sparks);
+        }
     }
 
     private void UpdateVisuals(
@@ -52,59 +95,45 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
         AppearanceComponent? appearance)
     {
         var sprite = (uid, spriteComp);
-        if (!AppearanceSystem.TryGetData<PoweredLightState>(uid, PoweredLightVisuals.BulbState, out var state, appearance) ||
-            !AppearanceSystem.TryGetData<bool>(uid, SunrisePoweredLightVisuals.HasPower, out var hasPower, appearance) ||
-            !TryComp<PointLightComponent>(uid, out var light))
-        {
-            StopFlicker(uid, component);
-            UpdateLayer(sprite, OnLayer, null, null);
-            HideFlickerLayers(sprite, component);
-            return;
-        }
+        var visuals = EnsureComp<SunrisePoweredLightSparksVisualsComponent>(uid);
+        AppearanceSystem.TryGetData<PoweredLightState>(uid, PoweredLightVisuals.BulbState, out var state, appearance);
+        AppearanceSystem.TryGetData<bool>(uid, SunrisePoweredLightVisuals.HasPower, out var hasPower, appearance);
 
         UpdateLayer(sprite, OnLayer, state == PoweredLightState.On && hasPower ? "base" : null, null);
 
-        if (state != PoweredLightState.Broken || !hasPower)
+        if (state != PoweredLightState.Broken)
         {
+            visuals.ShouldFlicker = null;
+            RemComp<ActiveSunrisePoweredLightSparksComponent>(uid);
             StopFlicker(uid, component);
-            HideFlickerLayers(sprite, component);
             return;
         }
 
-        if (!AppearanceSystem.TryGetData<int>(uid, SunrisePoweredLightVisuals.FlickerSequence, out var sequence, appearance))
+        if (!hasPower || component.States.Count == 0 || !HasComp<PointLightComponent>(uid))
+        {
+            RemComp<ActiveSunrisePoweredLightSparksComponent>(uid);
+            StopFlicker(uid, component);
+            return;
+        }
+
+        visuals.ShouldFlicker ??= _random.Prob(component.FlickerChance);
+        if (visuals.ShouldFlicker != true)
             return;
 
-        if (sequence == component.FlickerSequence)
+        if (HasComp<ActiveSunrisePoweredLightSparksComponent>(uid))
             return;
 
-        if (!AppearanceSystem.TryGetData<string>(uid, SunrisePoweredLightVisuals.FlickerState, out var flickerState, appearance))
-            return;
-
-        if (!AppearanceSystem.TryGetData<bool>(uid, SunrisePoweredLightVisuals.ShowSparks, out var showSparks, appearance))
-            return;
-
-        string? sparkState = null;
-        if (showSparks &&
-            !AppearanceSystem.TryGetData<string>(uid, SunrisePoweredLightVisuals.SparkState, out sparkState, appearance))
-            return;
-
-        component.FlickerSequence = sequence;
-        UpdateLayer(sprite, component.Layer, flickerState, component.SparkSprite);
-        if (showSparks)
-            UpdateLayer(sprite, component.SparksLayer, sparkState!, component.SparkSprite);
-        else
-            UpdateLayer(sprite, component.SparksLayer, null, component.SparkSprite);
-        PlayFlicker(uid, component, light);
+        var active = AddComp<ActiveSunrisePoweredLightSparksComponent>(uid);
+        active.NextFlickerTime = GetNextFlickerTime(component);
     }
 
     private void PlayFlicker(EntityUid uid, SunrisePoweredLightSparksComponent component, PointLightComponent light)
     {
         var player = EnsureComp<AnimationPlayerComponent>(uid);
-        if (_animation.HasRunningAnimation(uid, player, FlickerAnimationKey))
-            _animation.Stop(uid, player, FlickerAnimationKey);
-
-        component.OriginalLightEnergy = light.Energy;
+        var visuals = EnsureComp<SunrisePoweredLightSparksVisualsComponent>(uid);
+        visuals.OriginalLightEnergy = light.Energy;
         _animation.Play((uid, player), BuildFlickerAnimation(component, light), FlickerAnimationKey);
+        visuals.FlickerAudio = _audio.PlayEntity(component.FlickerSound, Filter.Local(), uid, false)?.Entity;
     }
 
     private Animation BuildFlickerAnimation(SunrisePoweredLightSparksComponent component, PointLightComponent light)
@@ -148,7 +177,37 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
         if (TryComp<AnimationPlayerComponent>(uid, out var player))
             _animation.Stop(uid, player, FlickerAnimationKey);
 
+        RestoreLight(uid);
+        if (TryComp<SunrisePoweredLightSparksVisualsComponent>(uid, out var visuals))
+            visuals.FlickerAudio = _audio.Stop(visuals.FlickerAudio);
+
         HideFlickerLayers(uid, component);
+    }
+
+    private void RestoreLight(EntityUid uid)
+    {
+        if (!TryComp<SunrisePoweredLightSparksVisualsComponent>(uid, out var visuals) ||
+            visuals.OriginalLightEnergy is not { } energy)
+            return;
+
+        if (TryComp<PointLightComponent>(uid, out var light))
+        {
+            // При замене лампы сервер мог уже включить исправный светильник.
+            var enabled = AppearanceSystem.TryGetData<PoweredLightState>(uid, PoweredLightVisuals.BulbState, out var state) &&
+                state == PoweredLightState.On;
+            if (!enabled)
+                _pointLight.SetEnergy(uid, energy, light);
+            _pointLight.SetEnabled(uid, enabled, light);
+        }
+
+        visuals.OriginalLightEnergy = null;
+    }
+
+    private TimeSpan GetNextFlickerTime(SunrisePoweredLightSparksComponent component)
+    {
+        var min = Math.Max(0, component.MinFlickerDelay.TotalSeconds);
+        var max = Math.Max(min, component.MaxFlickerDelay.TotalSeconds);
+        return _timing.CurTime + TimeSpan.FromSeconds(min + (max - min) * _random.NextDouble());
     }
 
     private void HideFlickerLayers(EntityUid uid, SunrisePoweredLightSparksComponent component)
@@ -180,7 +239,7 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
         if (!TryGetSparkLayer(sprite, layerKey, out var layer))
             return;
 
-        if (!TrySetState(layer, state, fallbackRsi))
+        if (!TrySetState(layer, state, sprite.Comp.BaseRSI, fallbackRsi))
         {
             SpriteSystem.LayerSetVisible(layer, false);
             SpriteSystem.LayerSetAutoAnimated(layer, false);
@@ -191,18 +250,18 @@ public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<S
         SpriteSystem.LayerSetAutoAnimated(layer, true);
     }
 
-    private bool TrySetState(Layer layer, string state, ResPath? fallbackRsi)
+    private bool TrySetState(Layer layer, string state, RSI? baseRsi, ResPath? fallbackRsi)
     {
-        if (layer.ActualRsi?.TryGetState(state, out _) == true)
+        // У напольных, абдукторских и праздничных светильников есть собственные состояния искр.
+        if (baseRsi?.TryGetState(state, out _) == true)
         {
-            SpriteSystem.LayerSetRsiState(layer, state);
+            SpriteSystem.LayerSetRsi(layer, (RSI?) null, state);
             return true;
         }
 
-        if (fallbackRsi == null)
-            return false;
+        if (fallbackRsi != null)
+            SpriteSystem.LayerSetRsi(layer, fallbackRsi.Value);
 
-        SpriteSystem.LayerSetRsi(layer, fallbackRsi.Value);
         if (layer.ActualRsi?.TryGetState(state, out _) != true)
             return false;
 

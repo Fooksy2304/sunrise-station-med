@@ -13,35 +13,30 @@ public sealed partial class SunrisePoweredLightSparksComponent : Component
     /// Карта слоя спрайта, на котором отображается мерцание.
     /// </summary>
     [DataField]
-    [ViewVariables(VVAccess.ReadOnly)]
     public string Layer = "sunrisePoweredLightFlicker";
 
     /// <summary>
     /// Карта слоя спрайта с искрами.
     /// </summary>
     [DataField]
-    [ViewVariables(VVAccess.ReadOnly)]
     public string SparksLayer = "sunrisePoweredLightSparks";
 
     /// <summary>
     /// Состояния мерцания, доступные для сломанного светильника.
     /// </summary>
-    [DataField]
-    [ViewVariables(VVAccess.ReadOnly)]
+    [DataField(required: true)]
     public List<string> States = [];
 
     /// <summary>
     /// Состояния искр, проигрываемые одновременно с мерцанием.
     /// </summary>
     [DataField]
-    [ViewVariables(VVAccess.ReadOnly)]
     public List<string> SparkStates = [];
 
     /// <summary>
     /// Путь к RSI с искрами для резервного слоя.
     /// </summary>
     [DataField]
-    [ViewVariables(VVAccess.ReadOnly)]
     public ResPath? SparkSprite;
 
     /// <summary>
@@ -87,20 +82,7 @@ public sealed partial class SunrisePoweredLightSparksComponent : Component
     public SoundSpecifier? FlickerSound;
 
     /// <summary>
-    /// Последняя обработанная клиентом последовательность вспышки.
+    /// Нагрузка разбитой включённой лампы, необходимая для определения наличия питания.
     /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    public int FlickerSequence;
-
-    /// <summary>
-    /// Выбранное сервером поведение текущей разбитой лампы.
-    /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    public bool? ShouldFlicker;
-
-    /// <summary>
-    /// Энергия лампы до начала текущей вспышки, чтобы восстановить её при прерывании анимации.
-    /// </summary>
-    [ViewVariables(VVAccess.ReadOnly)]
-    public float? OriginalLightEnergy;
+    public const float BrokenPowerLoad = 1f;
 }

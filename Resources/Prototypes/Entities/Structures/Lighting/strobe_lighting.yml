@@ -89,7 +89,7 @@
   components:
   # Sunrise edit start - добавление спрайтов и эффекта искр
   - type: Sprite
-    sprite: _Sunrise/Structures/Wallmounts/lighting/strobe_light.rsi
+    sprite: Structures/Wallmounts/Lighting/strobe_light.rsi
     layers:
     - map: ["enum.PoweredLightLayers.Base"]
       state: empty
@@ -100,15 +100,17 @@
       state: glow
       shader: unshaded
     - map: ["sunrisePoweredLightFlicker"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/strobe_light_sparks.rsi
       state: spark-light1
       shader: unshaded
       visible: false
     - map: ["sunrisePoweredLightSparks"]
+      sprite: _Sunrise/Structures/Wallmounts/lighting/strobe_light_sparks.rsi
       state: spark-sparks1
       shader: unshaded
       visible: false
   - type: SunrisePoweredLightSparks
-    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/strobe_light.rsi
+    sparkSprite: _Sunrise/Structures/Wallmounts/lighting/strobe_light_sparks.rsi
     flickerSound:
       collection: SunriseFluorescentFlicker
       params:

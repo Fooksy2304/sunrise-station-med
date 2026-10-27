@@ -10,12 +10,12 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._Sunrise.Light.EntitySystems;
 
-public sealed class SunrisePoweredLightSparksSystem : EntitySystem
+public sealed partial class SunrisePoweredLightSparksSystem : EntitySystem
 {
-    [Dependency] private readonly SharedAudioSystem _audio = default!;
-    [Dependency] private readonly SharedAppearanceSystem _appearance = default!;
-    [Dependency] private readonly IRobustRandom _random = default!;
-    [Dependency] private readonly IGameTiming _timing = default!;
+    [Dependency] private SharedAudioSystem _audio = default!;
+    [Dependency] private SharedAppearanceSystem _appearance = default!;
+    [Dependency] private IRobustRandom _random = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
     public override void Initialize()
     {

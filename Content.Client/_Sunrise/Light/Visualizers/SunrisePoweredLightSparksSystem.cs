@@ -10,9 +10,10 @@ using static Robust.Client.GameObjects.SpriteComponent;
 
 namespace Content.Client._Sunrise.Light.Visualizers;
 
-public sealed class SunrisePoweredLightSparksSystem : VisualizerSystem<SunrisePoweredLightSparksComponent>
+public sealed partial class SunrisePoweredLightSparksSystem : VisualizerSystem<SunrisePoweredLightSparksComponent>
 {
-    [Dependency] private readonly AnimationPlayerSystem _animation = default!;
+    [Dependency] private AnimationPlayerSystem _animation = default!;
+    [Dependency] private SharedPointLightSystem _pointLight = default!;
 
     private const string FlickerAnimationKey = "sunrise-powered-light-flicker";
     private const string OnLayer = "sunrisePoweredLightOn";
@@ -37,6 +38,10 @@ public sealed class SunrisePoweredLightSparksSystem : VisualizerSystem<SunrisePo
         if (args.Key != FlickerAnimationKey)
             return;
 
+        if (ent.Comp.OriginalLightEnergy is { } energy && TryComp<PointLightComponent>(ent, out var light))
+            _pointLight.SetEnergy(ent, energy, light);
+
+        ent.Comp.OriginalLightEnergy = null;
         HideFlickerLayers(ent, ent.Comp);
     }
 
@@ -98,6 +103,7 @@ public sealed class SunrisePoweredLightSparksSystem : VisualizerSystem<SunrisePo
         if (_animation.HasRunningAnimation(uid, player, FlickerAnimationKey))
             _animation.Stop(uid, player, FlickerAnimationKey);
 
+        component.OriginalLightEnergy = light.Energy;
         _animation.Play((uid, player), BuildFlickerAnimation(component, light), FlickerAnimationKey);
     }
 

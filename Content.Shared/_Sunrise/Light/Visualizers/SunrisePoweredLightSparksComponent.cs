@@ -97,4 +97,10 @@ public sealed partial class SunrisePoweredLightSparksComponent : Component
     /// </summary>
     [ViewVariables(VVAccess.ReadOnly)]
     public bool? ShouldFlicker;
+
+    /// <summary>
+    /// Энергия лампы до начала текущей вспышки, чтобы восстановить её при прерывании анимации.
+    /// </summary>
+    [ViewVariables(VVAccess.ReadOnly)]
+    public float? OriginalLightEnergy;
 }

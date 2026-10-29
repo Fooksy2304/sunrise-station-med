@@ -51,8 +51,6 @@ jobs:
         run: dotnet build Content.MapRenderer/Content.MapRenderer.csproj --configuration Release --no-restore /m
 
       - name: Run Map Renderer
-        env:
-          DOTNET_PROCESSOR_COUNT: 1
         run: dotnet bin/Content.MapRenderer/Content.MapRenderer.dll Dev
       # Sunrise edit end
 
